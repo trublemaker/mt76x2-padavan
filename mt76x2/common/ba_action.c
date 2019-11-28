@@ -10,8 +10,8 @@
 #define ORI_BA_SESSION_TIMEOUT	(2000)	/* ms */
 #define REC_BA_SESSION_IDLE_TIMEOUT	(1000)	/* ms */
 
-#define REORDERING_PACKET_TIMEOUT		((80 * OS_HZ)/1000)	/* system ticks -- 100 ms --> 80*/
-#define MAX_REORDERING_PACKET_TIMEOUT	((3000 * OS_HZ)/1000)	/* system ticks -- 100 ms*/
+#define REORDERING_PACKET_TIMEOUT		((60 * OS_HZ)/1000)	/* system ticks -- 100 ms --> 80*/
+#define MAX_REORDERING_PACKET_TIMEOUT	((1500 * OS_HZ)/1000)	/* system ticks -- 100 ms*/
 
 
 #define RESET_RCV_SEQ		(0xFFFF)
@@ -452,6 +452,7 @@ void ba_flush_reordering_timeout_mpdus(
 		DBGPRINT(RT_DEBUG_TRACE,("timeout[%d] (%08lx-%08lx = %d > %d): %x, flush all!\n ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
 			   (int)((long) Now32 - (long)(pBAEntry->LastIndSeqAtTimer)), MAX_REORDERING_PACKET_TIMEOUT,
 			   pBAEntry->LastIndSeq));
+		DBGPRINT(RT_DEBUG_TRACE,("mt76x2 flush all!\n"));
 		ba_refresh_reordering_mpdus(pAd, pBAEntry);
 		pBAEntry->LastIndSeqAtTimer = Now32;
 	}
@@ -479,8 +480,7 @@ void ba_flush_reordering_timeout_mpdus(
     			pBAEntry->LastIndSeq = Sequence;
     		}
 
-		DBGPRINT(RT_DEBUG_OFF, ("mt76x2 %3x, flush one!\n", pBAEntry->LastIndSeq));
-
+		DBGPRINT(RT_DEBUG_TRACE, ("mt76x2 %3x, flush one!\n", pBAEntry->LastIndSeq));		
 	}
 }
 
