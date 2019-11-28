@@ -163,4 +163,7 @@ config  MT76X2_AP_ADJ_PWR_CONSUMPTION
 	depends on MT76X2_AP
 	depends on RT_FIRST_IF_MT7620
 	default n
-
+	
+config MT76X2_AP_DEBUG
+	bool "Include Debug messages"
+	default n
