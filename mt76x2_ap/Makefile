@@ -276,10 +276,10 @@ endif
 ifeq ($(CONFIG_RT_DEBUG),y)
 	MTDEBUG = y
 else
-    $(info "CONFIG_MT76X2_AP_DEBUG: " $(CONFIG_MT76X2_AP_DEBUG) )
 	ifeq ($(CONFIG_MT76X2_AP_DEBUG),y)
 		MTDEBUG = y
 	endif
+    $(info 76X2 DEBUG FLAG: $(MTDEBUG) )
 endif
 
 ifeq ($(MTDEBUG),y)
@@ -291,6 +291,7 @@ endif
 ##################
 
 EXTRA_CFLAGS  = -Wall -Wstrict-prototypes -Wno-trigraphs -Wno-unused -Wno-declaration-after-statement
+EXTRA_CFLAGS += -Idrivers
 EXTRA_CFLAGS += -Idrivers/net/wireless/ralink/$(RT_DRV_DIR)/include
 ifeq ($(CONFIG_RT_ATE),y)
 EXTRA_CFLAGS += -Idrivers/net/wireless/ralink/$(RT_DRV_DIR)/ate/include
