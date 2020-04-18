@@ -1,2 +1,5 @@
 *.o
 *.cmd
+modules.order
+*.ko
+*.mod.c
