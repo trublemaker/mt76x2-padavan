@@ -32,21 +32,29 @@
 #ifdef GREENAP_SUPPORT
 VOID EnableAPMIMOPSv2(RTMP_ADAPTER *pAd, BOOLEAN ReduceCorePower)
 {
-	bbp_set_mmps(pAd, ReduceCorePower);
-	rtmp_mac_set_mmps(pAd, ReduceCorePower);
+	if(!pAd->ApCfg.bGreenAPActive){
+		bbp_set_mmps(pAd, ReduceCorePower);
+		rtmp_mac_set_mmps(pAd, ReduceCorePower);
 
-	pAd->ApCfg.bGreenAPActive=TRUE;
-	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPSNew, 30xx changes the # of antenna to 1\n"));
+		pAd->ApCfg.bGreenAPActive=TRUE;
+
+		//DBGPRINT(RT_DEBUG_INFO, ("7612 EnableAPMIMOPSNew, 30xx changes the # of antenna to 1\n"));
+		printk("7612 EnableAPMIMOPSNew, 30xx changes the # of antenna to 1\n");
+	}
 }
 
 
 VOID DisableAPMIMOPSv2(RTMP_ADAPTER *pAd)
 {
-	bbp_set_mmps(pAd, FALSE);
-	rtmp_mac_set_mmps(pAd, FALSE);
+	if(pAd->ApCfg.bGreenAPActive){
+		bbp_set_mmps(pAd, FALSE);
+		rtmp_mac_set_mmps(pAd, FALSE);
 
-	pAd->ApCfg.bGreenAPActive=FALSE;
-	DBGPRINT(RT_DEBUG_INFO, ("DisableAPMIMOPSNew, 30xx reserve only one antenna\n"));
+		pAd->ApCfg.bGreenAPActive=FALSE;
+
+		//DBGPRINT(RT_DEBUG_OFF, ("DisableAPMIMOPS, 305x/28xx reserve only one antenna\n"));
+		printk("7612 DisableAPMIMOPSNew, 305x/28xx reserve only one antenna\n");
+	}
 }
 
 
@@ -85,7 +93,8 @@ VOID EnableAPMIMOPSv1(
 	}
 	AsicSwitchChannel(pAd, CentralChannel, FALSE);
 
-	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPS, 305x/28xx changes the # of antenna to 1\n"));
+	//DBGPRINT(RT_DEBUG_INFO, ("7612 EnableAPMIMOPS, 30xx changes the # of antenna to 1\n"));
+	printk("7612 EnableAPMIMOPS, 30xx changes the # of antenna to 1\n");
 }
 
 
@@ -137,8 +146,9 @@ VOID DisableAPMIMOPSv1(
 
 	RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
 
+	//DBGPRINT(RT_DEBUG_OFF, ("DisableAPMIMOPS, 305x/28xx reserve only one antenna\n"));
+	printk("7612 DisableAPMIMOPS, 305x/28xx reserve only one antenna\n");
 
-	DBGPRINT(RT_DEBUG_INFO, ("DisableAPMIMOPS, 305x/28xx reserve only one antenna\n"));
 }
 #endif /* GREENAP_SUPPORT */
 
