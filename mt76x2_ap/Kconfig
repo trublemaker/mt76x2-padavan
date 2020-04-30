@@ -166,7 +166,7 @@ config  MT76X2_AP_ADJ_PWR_CONSUMPTION
 
 config MT76X2_AP_GREENAP
 	depends on MT76X2_AP
-	bool "GREENAP support add by mao"
+	bool "GreenAP support add by mao"
 	default y
 
 config MT76X2_AP_DEBUG
