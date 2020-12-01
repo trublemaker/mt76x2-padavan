@@ -45,7 +45,7 @@ NDIS_STATUS RtmpInsertPsQueue(
 	MAC_TABLE_ENTRY *pMacEntry,
 	UCHAR QueIdx)
 {
-	ULONG IrqFlags;
+	ULONG IrqFlags = 0;
 #ifdef UAPSD_SUPPORT
 	/* put the U-APSD packet to its U-APSD queue by AC ID */
 	UINT32 ac_id = QueIdx - QID_AC_BE; /* should be >= 0 */
@@ -109,7 +109,7 @@ VOID RtmpCleanupPsQueue(RTMP_ADAPTER *pAd, QUEUE_HEADER *pQueue)
 	QUEUE_ENTRY *pQEntry;
 	PNDIS_PACKET pPacket;
 
-	DBGPRINT(RT_DEBUG_TRACE, ("RtmpCleanupPsQueue (0x%08lx)...\n", (ULONG)pQueue));
+	DBGPRINT(RT_DEBUG_INFO, ("RtmpCleanupPsQueue (0x%08lx)...\n", (ULONG)pQueue));
 
 	while (pQueue->Head)
 	{

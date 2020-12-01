@@ -2349,7 +2349,7 @@ static void HTParametersHook(
 		{
 			pAd->ApCfg.bGreenAPEnable = TRUE;
 		}
-		DBGPRINT(RT_DEBUG_TRACE, ("HT: Green AP= %d\n", pAd->ApCfg.bGreenAPEnable));
+		DBGPRINT(RT_DEBUG_OFF, ("HT: Green AP= %d\n", pAd->ApCfg.bGreenAPEnable));
 	}
 #endif /* GREENAP_SUPPORT */
 	/* HT_DisallowTKIP*/
