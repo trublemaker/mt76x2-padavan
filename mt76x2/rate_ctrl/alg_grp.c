@@ -1292,7 +1292,7 @@ VOID MlmeNewRateAdapt(
 		/*  If UpRate is good then train up in current BF state */
 		if ((CurrRateIdx != UpRateIdx) && (MlmeGetTxQuality(pEntry, UpRateIdx) <= 0) && bTrainUp)
 		{
-			DBGPRINT(RT_DEBUG_TRACE, ("RAA : Up Rate %d\n", UpRateIdx));
+			DBGPRINT(RT_DEBUG_INFO, ("RAA : Up Rate %d\n", UpRateIdx));
 			pEntry->CurrTxRateIndex = UpRateIdx;
 			pEntry->LastSecTxRateChangeAction = RATE_UP;
 		}
@@ -1931,10 +1931,10 @@ VOID APMlmeDynamicTxRateSwitchingAdapt(RTMP_ADAPTER *pAd, UINT i)
 	//Down Rate
 	DownRateIdx = MlmeSelectDownRate(pAd, pEntry, CurrRateIdx);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("Average PER %lu, Cur %d, Up %d, Dn %d\n", TxErrorRatio,
+	DBGPRINT(RT_DEBUG_INFO, ("Average PER %lu, Cur %d, Up %d, Dn %d\n", TxErrorRatio,
 								CurrRateIdx, UpRateIdx, DownRateIdx));
 
-	DBGPRINT(RT_DEBUG_TRACE, ("RAA:Tx Quality 1SS %d, 2SS %d\n",
+	DBGPRINT(RT_DEBUG_INFO, ("RAA:Tx Quality 1SS %d, 2SS %d\n",
 								pEntry->TxQuality[pCurrTxRate->upMcs1],
 								pEntry->TxQuality[pCurrTxRate->upMcs2]));
 
