@@ -2429,7 +2429,7 @@ VOID SupportRate(
 typedef struct
 {
 	UCHAR	regclass;		/* regulatory class */
-	UCHAR	spacing;		/* 0: 20Mhz, 1: 40Mhz */
+	UCHAR	spacing;		/* 0: 20Mhz, 1: 40Mhz, 2: 80Mhz */
 	UCHAR	channelset[16];	/* max 15 channels, use 0 as terminator */
 } REG_CLASS;
 

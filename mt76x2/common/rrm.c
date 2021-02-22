@@ -254,6 +254,7 @@ INT Set_BeaconReq_Proc(
 						("%s: invalid Measure Mode. %d\n", 	__FUNCTION__, BcnReq.MeasureMode));
 					return TRUE;
 				}
+				break;
 			case 7: /* regulatory class. */
 				{
 					PSTRING RegClassString;

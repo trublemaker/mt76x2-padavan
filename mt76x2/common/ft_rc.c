@@ -832,6 +832,9 @@ extern BOOLEAN BARecSessionAdd(
 
 	BaParm.BAPolicy = IMMED_BA;
 	BaParm.AMSDUSupported = 0;
+	if (pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
+		BaParm.AMSDUSupported = 1;	
+	
 	BaParm.TID = AddreqFrame.BaParm.TID;
 	BaParm.BufSize = min(((UCHAR)AddreqFrame.BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
 	if (BaParm.BufSize == 0)

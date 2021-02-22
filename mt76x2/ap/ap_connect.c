@@ -316,6 +316,8 @@ VOID APMakeBssBeacon(RTMP_ADAPTER *pAd, INT apidx)
 	}
 #endif /* SPECIFIC_TX_POWER_SUPPORT */
 
+	BeaconTransmit.word = 0;
+
 	RTMPWriteTxWI(pAd, &pAd->BeaconTxWI, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, 0, BSS0Mcast_WCID, 
 					FrameLen, PID_MGMT, 0, 0,IFS_HTTXOP, &BeaconTransmit);
 
