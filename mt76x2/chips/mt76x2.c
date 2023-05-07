@@ -64,7 +64,7 @@ static RTMP_REG_PAIR mt76x2_mac_cr_table[] = {
 	{TX_PWR_CFG_8, 0x3A},
 	{TX_PWR_CFG_9, 0x3A},
 	{MT7662_EFUSE_CTRL, 0xD000},
-	{PER_PORT_PAUSE_ENABLE_CONTROL1, 0xA},
+	{PER_PORT_PAUSE_ENABLE_CONTROL1, 0x0},
 	{0x824, 0x60401c18}, //change the FCE threshold from 0x60402c28 to 0x60401c18
 #ifdef TXBF_SUPPORT
 	{TX_TXBF_CFG_0,		0x4002FC21},	/* Force MCS2 for sounding response*/
@@ -1111,6 +1111,10 @@ static void mt76x2_switch_channel(RTMP_ADAPTER *ad, u8 channel, BOOLEAN scan)
 
 	if ((ad->CommonCfg.TxStream == 1) && (ad->CommonCfg.RxStream == 1))
 		tx_rx_setting = 0x101;
+	else if ((ad->CommonCfg.TxStream == 2) && (ad->CommonCfg.RxStream == 1))
+		tx_rx_setting = 0x201;
+	else if ((ad->CommonCfg.TxStream == 1) && (ad->CommonCfg.RxStream == 2))
+		tx_rx_setting = 0x102;	
 	else if ((ad->CommonCfg.TxStream == 2) && (ad->CommonCfg.RxStream == 2))
 		tx_rx_setting = 0x202;
 	else 
@@ -1451,7 +1455,7 @@ void mt76x2_tssi_compensation(RTMP_ADAPTER *ad, u8 channel)
 #endif
 
 	if (ad->chipCap.tssi_stage <= TSSI_CAL_STAGE)
-		goto done;
+		return;
 	
 	if (cap->tssi_stage == TSSI_TRIGGER_STAGE) {
 		DBGPRINT(RT_DEBUG_INFO, ("%s:TSS_TRIGGER(channel = %d)\n", __FUNCTION__, channel));
@@ -1462,11 +1466,11 @@ void mt76x2_tssi_compensation(RTMP_ADAPTER *ad, u8 channel)
 		if(ad->chipOps.Calibration != NULL)
 			ad->chipOps.Calibration(ad, TSSI_COMPENSATION_7662, &param);
 		else 
-			goto done;
+			return;
 
 		cap->tssi_stage = TSSI_COMP_STAGE;
 
-		goto done;
+		return;
 	}
 
 	/* Check 0x2088[4] = 0 */
@@ -1898,10 +1902,10 @@ static void mt76x2_init_mac_cr(RTMP_ADAPTER *ad)
 		RTMP_IO_WRITE32(ad, 0x504, 0x0);
 	}
 	
-	/* Decrease MAC OFDM SIFS from 16 to 13us */ 
+	/* Decrease MAC OFDM SIFS from 16 to 14us */ 
 	RTMP_IO_READ32(ad, XIFS_TIME_CFG, &value);
 	value = value & (~XIFS_TIME_OFDM_SIFS_MASK);
-	value |= XIFS_TIME_OFDM_SIFS(0x0D);
+	value |= XIFS_TIME_OFDM_SIFS(0x0e);
 	RTMP_IO_WRITE32(ad, XIFS_TIME_CFG, value);
 
 	RTMP_IO_READ32(ad, BKOFF_SLOT_CFG, &value);
@@ -3799,7 +3803,7 @@ void mt76x2_temp_tx_alc(RTMP_ADAPTER *ad)
 			else
 				dB_diff = 0;
 			
-			DBGPRINT(RT_DEBUG_TRACE, ("%s::[5G] temp_diff=%d (0x%x), dB_diff=%d (0x%x)\n", 
+			DBGPRINT(RT_DEBUG_INFO, ("%s::[5G] temp_diff=%d (0x%x), dB_diff=%d (0x%x)\n", 
 				__FUNCTION__, temp_diff, temp_diff, dB_diff, dB_diff)); 			
 			
 			/* temperature compensation boundary check and limit */
@@ -3813,7 +3817,7 @@ void mt76x2_temp_tx_alc(RTMP_ADAPTER *ad)
 			else
 				dB_diff = 0;
 
-			DBGPRINT(RT_DEBUG_TRACE, ("%s::[2G] temp_diff=%d (0x%x), dB_diff=%d (0x%x)\n", 
+			DBGPRINT(RT_DEBUG_INFO, ("%s::[2G] temp_diff=%d (0x%x), dB_diff=%d (0x%x)\n", 
 				__FUNCTION__, temp_diff, temp_diff, dB_diff, dB_diff)); 
 			
 			/* temperature compensation boundary check and limit */
@@ -3821,21 +3825,21 @@ void mt76x2_temp_tx_alc(RTMP_ADAPTER *ad)
 			dB_diff = (dB_diff < pChipCap->tc_lower_bound_g_band) ? pChipCap->tc_lower_bound_g_band : dB_diff;
 		}
 
-		DBGPRINT(RT_DEBUG_TRACE, ("%s::temp_diff=%d (0x%x), dB_diff=%d (0x%x)\n", 
+		DBGPRINT(RT_DEBUG_INFO, ("%s::temp_diff=%d (0x%x), dB_diff=%d (0x%x)\n", 
 			__FUNCTION__, temp_diff, temp_diff, dB_diff, dB_diff)); 
 		
 		RTMP_IO_READ32(ad, TX_ALC_CFG_1, &tx0_temp_comp);
 		tx0_temp_comp &= ~TX_ALC_CFG_1_TX0_TEMP_COMP_MASK;
 		tx0_temp_comp |= ((tc_init_val + dB_diff*2) & TX_ALC_CFG_1_TX0_TEMP_COMP_MASK);
 		RTMP_IO_WRITE32(ad, TX_ALC_CFG_1, tx0_temp_comp);
-		DBGPRINT(RT_DEBUG_TRACE, ("%s::Tx0 power compensation = 0x%x\n", 
+		DBGPRINT(RT_DEBUG_INFO, ("%s::Tx0 power compensation = 0x%x\n", 
 			__FUNCTION__, tx0_temp_comp & 0x3f)); 
 		
 		RTMP_IO_READ32(ad, TX_ALC_CFG_2, &tx1_temp_comp);
 		tx1_temp_comp &= ~TX_ALC_CFG_2_TX1_TEMP_COMP_MASK;
 		tx1_temp_comp |= ((tc_init_val + dB_diff*2) & TX_ALC_CFG_2_TX1_TEMP_COMP_MASK);
 		RTMP_IO_WRITE32(ad, TX_ALC_CFG_2, tx1_temp_comp);
-		DBGPRINT(RT_DEBUG_TRACE, ("%s::Tx1 power compensation = 0x%x\n", 
+		DBGPRINT(RT_DEBUG_INFO, ("%s::Tx1 power compensation = 0x%x\n", 
 			__FUNCTION__, tx1_temp_comp & 0x3f)); 
 	}	
 }
@@ -5640,7 +5644,7 @@ void MT76x2_AsicDynamicVgaGainControl(RTMP_ADAPTER *pAd)
 
 		DBGPRINT(RT_DEBUG_INFO, ("vga_init_0 = %x, vga_init_1 = %x\n",  pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0, pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1));
 		DBGPRINT(RT_DEBUG_INFO, ("ori AGC1_R8 = %x, ori AGC1_R9 = %x\n",  pAd->CommonCfg.lna_vga_ctl.agc1_r8_backup, pAd->CommonCfg.lna_vga_ctl.agc1_r9_backup));
-		DBGPRINT(RT_DEBUG_TRACE,
+		DBGPRINT(RT_DEBUG_INFO,
 			("MT76x2 one second False CCA=%d, fixed agc_vga_0:0%x, fixed agc_vga_1:0%x\n", pAd->RalinkCounters.OneSecFalseCCACnt, val1, val2));
 		DBGPRINT(RT_DEBUG_INFO, ("compensate level = %x\n", pAd->chipCap.compensate_level));
 
@@ -5944,6 +5948,7 @@ VOID mt76x2_ePA_per_rate_compensate_init(RTMP_ADAPTER *pAd , BOOLEAN is_ePA)
 VOID mt76x2_init(RTMP_ADAPTER *pAd)
 {
 	RTMP_CHIP_CAP *pChipCap = &pAd->chipCap;
+	RTMP_CHIP_OP *pChipOps = &pAd->chipOps;
 
 	memcpy(&pAd->chipCap, &MT76x2_ChipCap, sizeof(RTMP_CHIP_CAP));
 	memcpy(&pAd->chipOps, &MT76x2_ChipOp, sizeof(RTMP_CHIP_OP));
@@ -5982,8 +5987,6 @@ VOID mt76x2_init(RTMP_ADAPTER *pAd)
 	}
 #endif /* DOT11_VHT_AC */
 
-
-
 	pChipCap->asic_caps |= (fASIC_CAP_MCS_LUT);
 
 	RTMP_DRS_ALG_INIT(pAd, RATE_ALG_GRP);
@@ -6016,6 +6019,12 @@ VOID mt76x2_init(RTMP_ADAPTER *pAd)
 		mt76x2_ePA_per_rate_compensate_init(pAd, TRUE);
 	else
 		mt76x2_ePA_per_rate_compensate_init(pAd, FALSE);
+
+#ifdef GREENAP_SUPPORT
+			pChipOps->EnableAPMIMOPS = EnableAPMIMOPSv2;
+			pChipOps->DisableAPMIMOPS = DisableAPMIMOPSv2;
+#endif /* GREENAP_SUPPORT */
+
 }
 
 static void patch_BBPL_on(RTMP_ADAPTER *pAd)

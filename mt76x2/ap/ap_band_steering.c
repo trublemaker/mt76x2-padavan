@@ -487,6 +487,7 @@ INT BndStrg_Enable(PBND_STRG_CLI_TABLE table, BOOLEAN enable)
 		pAd = (PRTMP_ADAPTER) table->priv;
 		msg.Action = BNDSTRG_ONOFF;
 		msg.OnOff = table->bEnabled;
+		msg.Band = table->Band;
 		RtmpOSWrielessEventSend(
 			pAd->net_dev,
 			RT_WLAN_EVENT_CUSTOM,
@@ -512,6 +513,10 @@ INT BndStrg_SetInfFlags(PRTMP_ADAPTER pAd, PBND_STRG_CLI_TABLE table, BOOLEAN bI
 		(table->b5GInfReady ^ bInfReady))
 	{
 		table->b5GInfReady = bInfReady;
+		if (bInfReady)
+			table->Band |= BAND_5G;
+		else
+			table->Band &= ~BAND_5G;
 
 		msg.Action = INF_STATUS_RSP_5G;
 		msg.b5GInfReady = table->b5GInfReady;
@@ -531,6 +536,10 @@ INT BndStrg_SetInfFlags(PRTMP_ADAPTER pAd, PBND_STRG_CLI_TABLE table, BOOLEAN bI
 	else if (table->b2GInfReady ^ bInfReady)
 	{
 		table->b2GInfReady = bInfReady;
+		if (bInfReady)
+			table->Band |= BAND_24G;
+		else
+			table->Band &= ~BAND_24G;		
 		msg.Action = INF_STATUS_RSP_2G;
 		msg.b2GInfReady = table->b2GInfReady;
 		RtmpOSWrielessEventSend(
@@ -560,7 +569,7 @@ BOOLEAN BndStrg_IsClientStay(
 	
 	if (table->AlgCtrl.ConditionCheck & fBND_STRG_CND_5G_RSSI &&
 		table->Band == BAND_5G &&
-		(Rssi < (table->RssiLow - 10/*Test*/)))
+		(Rssi < (table->RssiLow - 4/*Test*/)))
 	{
 		BNDSTRG_MSG msg;
 

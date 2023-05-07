@@ -3303,7 +3303,9 @@ VOID RTMPIoctlGetSiteSurvey(
 	wrq->u.data.length = strlen(msg);
 	copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("RTMPIoctlGetSiteSurvey - wrq->u.data.length = %d\n", wrq->u.data.length));
+	DBGPRINT(RT_DEBUG_INFO, ("RTMPIoctlGetSiteSurvey - wrq->u.data.length = %d\n", wrq->u.data.length));
+	//DBGPRINT(RT_DEBUG_OFF, ("msg: \n%s\n", msg ));
+	//hex_dump("5g", msg, strlen(msg));
 	os_free_mem(NULL, (PUCHAR)msg);	
 }
 #endif
@@ -4538,14 +4540,19 @@ INT	Set_GreenAP_Proc(
 	if (Value == 0)
 	{
 		pAd->ApCfg.bGreenAPActive=FALSE;
+		RTMP_CHIP_DISABLE_AP_MIMOPS(pAd);
 		pAd->ApCfg.bGreenAPEnable = FALSE;
 	}
 	else if (Value == 1)	
+	{
 		pAd->ApCfg.bGreenAPEnable = TRUE;
+		//pAd->ApCfg.bGreenAPActive=TRUE;
+		RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,TRUE);
+	}
 	else
 		return FALSE; /*Invalid argument*/
 
-	DBGPRINT(RT_DEBUG_TRACE, ("Set_GreenAP_Proc::(bGreenAPEnable=%d)\n",pAd->ApCfg.bGreenAPEnable));
+	DBGPRINT(RT_DEBUG_OFF, ("Set_GreenAP_Proc::(bGreenAPEnable=%d) %s\n",pAd->ApCfg.bGreenAPEnable, __func__));
 
 	return TRUE;
 }

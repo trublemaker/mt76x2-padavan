@@ -1741,8 +1741,8 @@ INT RTMPAPPrivIoctlSet(
                )
 #endif /* WSC_AP_SUPPORT */
             )
-			continue;  							
-
+			continue;
+			
 		for (PRTMP_PRIVATE_SET_PROC = RTMP_PRIVATE_SUPPORT_PROC; PRTMP_PRIVATE_SET_PROC->name; PRTMP_PRIVATE_SET_PROC++)
 		{
 			if (!strcmp(this_char, PRTMP_PRIVATE_SET_PROC->name)) 
@@ -6448,7 +6448,8 @@ INT Set_CountryCode_Proc(
 	}
 	else
 	{
-		NdisZeroMemory(pAd->CommonCfg.CountryCode, 3);
+		NdisZeroMemory(pAd->CommonCfg.CountryCode, 
+			sizeof(pAd->CommonCfg.CountryCode));
 		pAd->CommonCfg.bCountryFlag = FALSE;
 	}	
 		
@@ -6583,7 +6584,8 @@ INT Set_CountryString_Proc(
 
 	if (success == TRUE)
 	{
-		NdisZeroMemory(pAd->CommonCfg.CountryCode, 3);
+		NdisZeroMemory(pAd->CommonCfg.CountryCode, 
+			sizeof(pAd->CommonCfg.CountryCode));
 		NdisMoveMemory(pAd->CommonCfg.CountryCode, allCountry[index].IsoName, 2);
 		pAd->CommonCfg.CountryCode[2] = ' ';
 		/* After Set ChGeography need invoke SSID change procedural again for Beacon update. */
@@ -11257,6 +11259,7 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 							TxErrorRatio = ((TxRetransmit + TxFailCount) * 100) / TxTotalCnt;
 
 						if (((lastTxRate >> 13) & 0x7) == 0x04) {
+							sprintf(msg+strlen(msg), "Last TX PER = %lu\n", TxErrorRatio);
 							sprintf(msg+strlen(msg), "Last TX Rate                    = MCS%d, %dSS, %s, %s, %cGI, %s%s\n",
 								lastTxRate & 0x0F,
 								(((lastTxRate >> 4) & 0x3) + 1),
@@ -11265,9 +11268,8 @@ VOID RTMPIoctlStatistics(RTMP_ADAPTER *pAd, RTMP_IOCTL_INPUT_STRUCT *wrq)
 								((lastTxRate >> 9) & 0x1)? 'S': 'L',
 								phyMode[(lastTxRate >> 13) & 0x7],
 								((lastTxRate >> 10) & 0x3)? ", STBC": " ");
+							} else {
 
-							sprintf(msg+strlen(msg), "Last TX PER = %lu\n", TxErrorRatio);
-						} else {
 							sprintf(msg+strlen(msg), "Last TX Rate                    = MCS%d, %s, %s, %cGI, %s%s\n",
 								lastTxRate & 0x3F,
 								fec_coding[((lastTxRate >> 6) & 0x1)],	
@@ -15700,7 +15702,7 @@ INT Set_Enable_Channel_Timer_Proc(RTMP_ADAPTER *pAd, PSTRING arg)
 
 	UCHAR timer_enable;
 	UCHAR bbp_val;
-	UINT32 mac_val;
+	UINT32 mac_val = 0;
 	mac_val &= (~0x01);
 
 	DBGPRINT(RT_DEBUG_OFF, ("--> %s()\n", __FUNCTION__));
@@ -16491,4 +16493,3 @@ INT Set_Airplay_Enable(RTMP_ADAPTER	*pAd, PSTRING arg)
 }
 
 #endif /* AIRPLAY_SUPPORT*/
-

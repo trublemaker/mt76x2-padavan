@@ -59,8 +59,9 @@
                 }       				\
                 else if (WMODE_CAP_AC(__PhyMode))     \
                 {       \
-                        __HtPhyMode.field.MODE = MODE_VHT;                                      \
-                        __HtPhyMode.field.MCS = 9;                                                      \
+                        __HtPhyMode.field.MODE = MODE_VHT;  \
+                        __HtPhyMode.field.MCS = 9;       	\
+						__HtPhyMode.field.BW = BW_80;   	\
                }       \
 	}
 

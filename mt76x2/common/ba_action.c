@@ -446,7 +446,7 @@ void ba_flush_reordering_timeout_mpdus(
 /*		(RTMP_TIME_AFTER((unsigned long)Now32, (unsigned long)(pBAEntry->LastIndSeqAtTimer+(10*REORDERING_PACKET_TIMEOUT))) &&*/
 /*		 (pBAEntry->list.qlen > (pBAEntry->BAWinSize/8)))*/
 	if (RTMP_TIME_AFTER((unsigned long)Now32, (unsigned long)(pBAEntry->LastIndSeqAtTimer+(MAX_REORDERING_PACKET_TIMEOUT/6))) 
-		 &&(pBAEntry->list.qlen > 1)
+		 &&(pBAEntry->list.qlen > 0)
 		)
 	{
 		DBGPRINT(RT_DEBUG_TRACE,("timeout[%d] (%08lx-%08lx = %d > %d): %x, flush all!\n ", pBAEntry->list.qlen, Now32, (pBAEntry->LastIndSeqAtTimer), 
@@ -551,7 +551,7 @@ VOID BAOriSessionSetUp(
 	/* Initialize BA session */
 	pBAEntry->ORI_BA_Status = Originator_WaitRes;       
 	pBAEntry->Wcid = pEntry->wcid;
-	pBAEntry->BAWinSize = BAWinSize;  
+	pBAEntry->BAWinSize = pAd->CommonCfg.BACapability.field.TxBAWinLimit;  
 	pBAEntry->Sequence = BA_ORI_INIT_SEQ;
 	pBAEntry->Token = 1;	/* (2008-01-21) Jan Lee recommends it - this token can't be 0*/
 	pBAEntry->TID = TID;
@@ -685,7 +685,7 @@ BOOLEAN BARecSessionAdd(
 
 	/* Intel patch*/
 	if (BAWinSize == 0)
-		BAWinSize = 64;
+		BAWinSize = pAd->CommonCfg.BACapability.field.RxBAWinLimit;
 
 	/* get software BA rec array index, Idx*/
 	Idx = pEntry->BARecWcidArray[TID];
@@ -1338,7 +1338,7 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	ADDframe.StatusCode = Status;
 	ADDframe.BaParm.BAPolicy = IMMED_BA;
 #ifdef DOT11_VHT_AC
-	if (pMacEntry && IS_VHT_STA(pMacEntry) && (Status == 0))
+	if (pMacEntry && IS_VHT_STA(pMacEntry) && Status == 0 && pAd->CommonCfg.DesiredHtPhy.AmsduEnable)
 		ADDframe.BaParm.AMSDUSupported = pAddreqFrame->BaParm.AMSDUSupported;
 	else
 #endif /* DOT11_VHT_AC */
@@ -1351,7 +1351,7 @@ VOID PeerAddBAReqAction(RTMP_ADAPTER *pAd, MLME_QUEUE_ELEM *Elem)
 	ADDframe.BaParm.TID = pAddreqFrame->BaParm.TID;
 	ADDframe.BaParm.BufSize = min(((UCHAR)pAddreqFrame->BaParm.BufSize), (UCHAR)pAd->CommonCfg.BACapability.field.RxBAWinLimit);
 	if (ADDframe.BaParm.BufSize == 0)
-		ADDframe.BaParm.BufSize = 64; 
+		ADDframe.BaParm.BufSize = pAd->CommonCfg.BACapability.field.RxBAWinLimit;
 	ADDframe.TimeOutValue = 0; /* pAddreqFrame->TimeOutValue; */
 
 #ifdef UNALIGNMENT_SUPPORT
@@ -1709,6 +1709,9 @@ void convert_reordering_packet_to_preAMSDU_or_802_3_packet(
 
 	ASSERT(pRxBlk->pRxPacket);
 
+	if(pRxBlk->pRxPacket == NULL)
+		return;
+
 	pRxPkt = RTPKT_TO_OSPKT(pRxBlk->pRxPacket);
 
 	RTMP_OS_PKT_INIT(pRxBlk->pRxPacket,
@@ -1952,6 +1955,13 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR FromWhichBSS
 	UINT16 Sequence = pRxBlk->pHeader->Sequence;
 	ULONG Now32;
 
+	if (!pRxBlk->DataSize) {
+		/* release packet*/
+		/* avoid processing with null paiload packets - QCA61X4A bug */
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+		return;
+	}
+
 	if (!RX_BLK_TEST_FLAG(pRxBlk, fRX_AMSDU) &&  (pRxBlk->DataSize > MAX_RX_PKT_LEN))
 	{
 		static int err_size;
@@ -2031,13 +2041,15 @@ VOID Indicate_AMPDU_Packet(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk, UCHAR FromWhichBSS
 	{
 		
 		pBAEntry->nDropPacket++;
+#if 0 /* do not keep dupe packets */
 #ifdef FORCE_ANNOUNCE_CRITICAL_AMPDU
 		if (pRxBlk->CriticalPkt)
 		{
 				INDICATE_LEGACY_OR_AMSDU(pAd, pRxBlk, FromWhichBSSID);
 		}else
 #endif /* FORCE_ANNOUNCE_CRITICAL_AMPDU */
-				RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
+#endif
+		RELEASE_NDIS_PACKET(pAd, pRxBlk->pRxPacket, NDIS_STATUS_FAILURE);
 
 	}
 	

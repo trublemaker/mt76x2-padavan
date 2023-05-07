@@ -219,6 +219,11 @@ static USHORT update_associated_mac_entry(
 #endif /* DOT11W_PMF_SUPPORT */
 #endif /* SOFT_ENCRYPT */
 
+	if (wdev->bWmmCapable && ie_list->bWmmCapable)
+		CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+	else
+		CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+
 #ifdef DOT11_N_SUPPORT
 	/* 	
 		WFA recommend to restrict the encryption type in 11n-HT mode.
@@ -527,6 +532,8 @@ static USHORT update_associated_mac_entry(
 					pEntry->HTPhyMode.field.MODE, pEntry->HTPhyMode.field.MCS));
 	}
 
+	if (!pEntry)
+		return MLME_UNSPECIFY_FAIL;
 
 	if (pEntry->AuthMode < Ndis802_11AuthModeWPA)
 		ApLogEvent(pAd, pEntry->Addr, EVENT_ASSOCIATED);
@@ -579,7 +586,7 @@ static USHORT APBuildAssociation(
 
 	MaxSupportedRate = dot11_2_ra_rate(MaxSupportedRateIn500Kbps);
 
-    if ((WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_G) 
+    if (pAd && (WMODE_EQUAL(pAd->CommonCfg.PhyMode, WMODE_G) 
 #ifdef DOT11_N_SUPPORT
 		|| WMODE_EQUAL(pAd->CommonCfg.PhyMode, (WMODE_G | WMODE_GN))
 #endif /* DOT11_N_SUPPORT */
@@ -1711,6 +1718,8 @@ SendAssocResponse:
 								  PRINT_MAC(pEntry->Addr)));
 
 /*		SendSingalToDaemon(SIGUSR2, pObj->IappPid); */
+		/* This is a reassociation procedure */
+		pEntry->IsReassocSta = isReassoc;
 
 #ifdef DOT11R_FT_SUPPORT		
 		/*
@@ -1799,6 +1808,7 @@ SendAssocResponse:
 				SendBeaconRequest(pAd, pEntry->wcid);
 			}
 			/*BAOriSessionSetUp(pAd, pEntry, 0, 0, 3000, FALSE); */
+			RTMP_BASetup(pAd, pEntry, 5);
 		}
 #endif /* DOT11_N_SUPPORT */
 

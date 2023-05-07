@@ -507,8 +507,10 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 
 #ifdef DOT11_N_SUPPORT
 #ifdef GREENAP_SUPPORT
+
 	if (pAd->ApCfg.bGreenAPEnable == TRUE)
 	{
+		DBGPRINT(RT_DEBUG_WARN,("7612 ===> APStartUp %p\n", pAd->chipOps.EnableAPMIMOPS ));
 		RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,TRUE);
 		pAd->ApCfg.GreenAPLevel=GREENAP_WITHOUT_ANY_STAS_CONNECT;
 	}
@@ -683,6 +685,7 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 	ApLogEvent(pAd, pAd->CurrentAddress, EVENT_RESET_ACCESS_POINT);
 	pAd->Mlme.PeriodicRound = 0;
 	pAd->Mlme.OneSecPeriodicRound = 0;
+	pAd->MacTab.MsduLifeTime = 5; /* default 5 seconds */
 
 	OPSTATUS_SET_FLAG(pAd, fOP_AP_STATUS_MEDIA_STATE_CONNECTED);
 
@@ -708,8 +711,11 @@ DBGPRINT(RT_DEBUG_OFF, ("%s(): AP Set CentralFreq at %d(Prim=%d, HT-CentCh=%d, V
 	if (IS_MT76x2(pAd))
 	{
 #ifdef TXBF_SUPPORT
+#ifdef RALINK_ATE
+
         if (pAd->hw_cfg.cent_ch > 14) 
            rtmp_ate_txbf_fix_tank_code(pAd, pAd->hw_cfg.cent_ch, 0);  // load tank code from efuse, iBF only for A band
+#endif
 #endif /*TXBF_SUPPORT*/
 		mt76x2_calibration(pAd, pAd->hw_cfg.cent_ch);
     }
@@ -892,6 +898,7 @@ VOID APStop(
 	{
 		RTMPCancelTimer(&pAd->ApCfg.CounterMeasureTimer, &Cancelled);
 		pAd->ApCfg.CMTimerRunning = FALSE;
+		pAd->ApCfg.BANClass3Data = FALSE;
 	}
 	
 #ifdef WAPI_SUPPORT
@@ -959,7 +966,7 @@ static VOID CheckApEntryInTraffic(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 		TxTotalByteCnt = pEntry->OneSecTxBytes;
 		RxTotalByteCnt = pEntry->OneSecRxBytes;
 
-		DBGPRINT(RT_DEBUG_TRACE,("WCID%d, %dM, TxBytes:%d, RxBytes:%d\n",
+		DBGPRINT(RT_DEBUG_INFO,("WCID%d, %dM, TxBytes:%d, RxBytes:%d\n",
 				pEntry->wcid,
 				(((TxTotalByteCnt + RxTotalByteCnt) << 3) >> 20), 
 				TxTotalByteCnt, 
@@ -979,7 +986,7 @@ static VOID CheckApEntryInTraffic(RTMP_ADAPTER *pAd, MAC_TABLE_ENTRY *pEntry)
 					else
 						pAd->ApClientTxopAbledCnt++;
 
-					DBGPRINT(RT_DEBUG_TRACE,("WCID%d, StaTxopAbledCnt:%d, ApClientTxopAbledCnt:%d\n",
+					DBGPRINT(RT_DEBUG_INFO,("WCID%d, StaTxopAbledCnt:%d, ApClientTxopAbledCnt:%d\n",
 						pEntry->wcid,
 						pAd->StaTxopAbledCnt, 
 						pAd->ApClientTxopAbledCnt));
@@ -1055,6 +1062,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 	pMacTable->fAnyStation20Only = FALSE;
 	pMacTable->fAnyStationIsLegacy = FALSE;
 	pMacTable->fAnyStationMIMOPSDynamic = FALSE;
+	//pMacTable->fTxBurstRetune = FALSE;
 #ifdef GREENAP_SUPPORT
 	/*Support Green AP */
 	pMacTable->fAnyStationIsHT=FALSE;
@@ -1348,7 +1356,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			}
 #endif /* SMART_MESH_MONITOR */
 		}
-		else if (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck)
+		else if ((pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck) && (pEntry->PsMode != PWR_SAVE))
 		{
 			/*
 				AP have no way to know that the PwrSaving STA is leaving or not.
@@ -1495,7 +1503,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 			MlmeFreeMemory(pAd, pOutBuffer);
 			//JERRY
 			if (!pEntry->IsKeep)
-				MacTableDeleteEntry(pAd, pEntry->Aid, pEntry->Addr);
+				MacTableDeleteEntry(pAd, pEntry->wcid, pEntry->Addr);
 			continue;
 		}
 		if (pEntry->BTMDisassocCount != 0)
@@ -1635,7 +1643,7 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		bRalinkBurstMode = TRUE;
 	else
 		bRalinkBurstMode = FALSE;
-
+	
 #ifdef DOT11_N_SUPPORT
 #ifdef GREENAP_SUPPORT
 	if (WMODE_CAP_N(pAd->CommonCfg.PhyMode))
@@ -1643,8 +1651,8 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 		if(pAd->MacTab.fAnyStationIsHT == FALSE
 			&& pAd->ApCfg.bGreenAPEnable == TRUE)
 		{
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef COC_SUPPORT
+//#ifdef RTMP_RBUS_SUPPORT
+//#ifdef COC_SUPPORT //mao --
 			if ((pAd->MacTab.Size==0) &&
 				(pAd->ApCfg.GreenAPLevel != GREENAP_WITHOUT_ANY_STAS_CONNECT))
 			{
@@ -1653,8 +1661,8 @@ VOID MacTableMaintenance(RTMP_ADAPTER *pAd)
 				
 			}
 			else
-#endif /* COC_SUPPORT */
-#endif /* RTMP_RBUS_SUPPORT */
+//#endif /* COC_SUPPORT */
+//#endif /* RTMP_RBUS_SUPPORT */
 			if (pAd->ApCfg.GreenAPLevel!=GREENAP_ONLY_11BG_STAS)
 			{
 				RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,FALSE);
@@ -1850,7 +1858,7 @@ VOID APUpdateOperationMode(
 	BOOLEAN bDisableBGProtect = FALSE, bNonGFExist = FALSE;
 
 	pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode = 0;
-	if ((pAd->ApCfg.LastNoneHTOLBCDetectTime + (5 * OS_HZ)) > pAd->Mlme.Now32) /* non HT BSS exist within 5 sec */
+	if (pAd->CommonCfg.DisableOLBCDetect == 0 && ((pAd->ApCfg.LastNoneHTOLBCDetectTime + (5 * OS_HZ)) > pAd->Mlme.Now32)) /* non HT BSS exist within 5 sec */
 	{
 		pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode = 1;
 		bDisableBGProtect = FALSE;
@@ -1867,7 +1875,7 @@ VOID APUpdateOperationMode(
 		bDisableBGProtect = TRUE;
 	}
 		
-	if (pAd->MacTab.fAnyStationIsLegacy)
+	if (pAd->MacTab.fAnyStationIsLegacy || pAd->MacTab.Size > 1)
 	{
 		pAd->CommonCfg.AddHTInfo.AddHtInfo2.OperaionMode = 3;
 		bDisableBGProtect = TRUE;
@@ -2022,6 +2030,9 @@ VOID APUpdateCapabilityAndErpIe(
 	}
 
 	AsicSetSlotTime(pAd, ShortSlotCapable);
+	/*update slot time only when value is difference*/
+	if(pAd->CommonCfg.bUseShortSlotTime != ShortSlotCapable)
+		pAd->CommonCfg.bUseShortSlotTime = ShortSlotCapable;
 
 }
 

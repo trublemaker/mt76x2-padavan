@@ -38,8 +38,8 @@
 #include <linux/rtnetlink.h>
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-#include "../../../../../../../net/nat/hw_nat/ra_nat.h"
-#include "../../../../../../../net/nat/hw_nat/frame_engine.h"
+#include "../net/nat/hw_nat/ra_nat.h"
+#include "../net/nat/hw_nat/frame_engine.h"
 #endif
 
 /* TODO */
@@ -85,7 +85,7 @@ static inline void netdev_priv_set(struct net_device *dev, void *priv)
 }
 
 
-ULONG RTDebugLevel = RT_DEBUG_WARN;		//mao test
+ULONG RTDebugLevel = RT_DEBUG_TRACE; //RT_DEBUG_OFF ;		//mao test
 ULONG RTDebugFunc = 0;
 
 #ifdef OS_ABL_FUNC_SUPPORT
@@ -743,8 +743,7 @@ void hex_dump(char *str, UCHAR *pSrcBufVA, UINT SrcBufLen)
 	unsigned char *pt;
 	int x;
 
-	if (RTDebugLevel < RT_DEBUG_TRACE)
-		return;
+	//if (RTDebugLevel < RT_DEBUG_TRACE)	return;
 
 	pt = pSrcBufVA;
 	printk("%s: %p, len = %d\n", str, pSrcBufVA, SrcBufLen);

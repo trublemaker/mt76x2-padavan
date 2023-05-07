@@ -145,6 +145,7 @@ NDIS_STATUS RTEnqueueInternalCmd(
 	if (cmdqelmt != NULL)
 	{
 		NdisAcquireSpinLock(&pAd->CmdQLock);
+		//RTMP_SPIN_LOCK_IRQSAVE(&pAd->CmdQLock,&flag);
 		if (pAd->CmdQ.CmdQState & RTMP_TASK_CAN_DO_INSERT)
 		{
 			EnqueueCmd((&pAd->CmdQ), cmdqelmt);
@@ -155,6 +156,7 @@ NDIS_STATUS RTEnqueueInternalCmd(
 			status = NDIS_STATUS_FAILURE;
 		}
 		NdisReleaseSpinLock(&pAd->CmdQLock);
+		//RTMP_SPIN_UNLOCK_IRQRESTORE(&pAd->CmdQLock,&flag);
 
 		if (status == NDIS_STATUS_FAILURE)
 		{

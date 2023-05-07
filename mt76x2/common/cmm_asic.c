@@ -1727,8 +1727,8 @@ VOID AsicSetEdcaParm(RTMP_ADAPTER *pAd, PEDCA_PARM pEdcaParm)
 		}
 		else
 		{
-			Ac2Cfg.field.AcTxop = 96;	/* AC_VI: 96*32us ~= 3ms*/
-			Ac3Cfg.field.AcTxop = 48;	/* AC_VO: 48*32us ~= 1.5ms*/
+			Ac2Cfg.field.AcTxop = 94;	/* AC_VI: 96*32us ~= 3ms*/
+			Ac3Cfg.field.AcTxop = 47;	/* AC_VO: 48*32us ~= 1.5ms*/
 		}
 		Ac2Cfg.field.Cwmin = pAd->wmm_cw_min;
 		Ac2Cfg.field.Cwmax = pAd->wmm_cw_max;
@@ -3980,7 +3980,8 @@ VOID asic_change_tx_retry(
 {
 	UINT32	TxRtyCfg, MacReg = 0;
 
-	if (num < 3)
+#if 0   /* big retry limit is poor work at interference, allways use 7/11 */
+	if (num < 2)
 	{
 		/* Tx data retry 31/15 (thres 2000) */
 		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
@@ -3996,10 +3997,11 @@ VOID asic_change_tx_retry(
 	}
 	else
 	{
-		/* Tx data retry 8/10 (thres 256)  */
+#endif
+	/* Tx data retry 7/11 (thres 256)  */
 		RTMP_IO_READ32(pAd, TX_RTY_CFG, &TxRtyCfg);
 		TxRtyCfg &= 0xf0000000;
-		TxRtyCfg |= 0x0100080A;
+		TxRtyCfg |= 0x0100070B;
 		RTMP_IO_WRITE32(pAd, TX_RTY_CFG, TxRtyCfg);
 
 		/* Tx RTS retry 3, enable RTS fallback */
@@ -4007,7 +4009,12 @@ VOID asic_change_tx_retry(
 		MacReg &= 0xFEFFFF00;
 		MacReg |= 0x01000003;
 		RTMP_IO_WRITE32(pAd, TX_RTS_CFG, MacReg);
+#if 0
+		/* enable fallback to legacy (MCS0 -> OFDM 6, default for MT76x2) */
+		RTMP_IO_WRITE32(pAd, HT_FBK_TO_LEGACY, 0x1818);
 	}
+#endif
+
 }
 
 VOID pkt_aggr_num_change(

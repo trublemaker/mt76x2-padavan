@@ -1525,7 +1525,7 @@ VOID ApCliIfMonitor(RTMP_ADAPTER *pAd)
 				bForceBrocken = TRUE;
             }
  
-			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (8 * OS_HZ))))
+			if (RTMP_TIME_AFTER(pAd->Mlme.Now32 , (pApCliEntry->ApCliRcvBeaconTime + (30 * OS_HZ))))
 			{
 				printk("ApCliIfMonitor: IF(%s%d) - no Beacon is received from Root-AP.\n", INF_APCLI_DEV_NAME, index);
 				bForceBrocken = TRUE;
@@ -2727,7 +2727,9 @@ BOOLEAN  ApCliHandleRxBroadcastFrame(
 		}
 	}
 	pRxInfo->MyBss = 1;
-
+	#ifdef APCLI_SUPPORT
+		//rx_get_pn(pRxBlk,pRxInfo);
+	#endif /* APCLI_SUPPORT */
 #ifdef HDR_TRANS_SUPPORT
 	if (pRxBlk->bHdrRxTrans)
 		Indicate_Legacy_Packet_Hdr_Trns(pAd, pRxBlk, FromWhichBSSID);
@@ -3111,16 +3113,18 @@ VOID APCli_Init(RTMP_ADAPTER *pAd, RTMP_OS_NETDEV_OP_HOOK *pNetDevOps)
 							and should be set to 1 in extended multiple BSSIDs'
 							Bit3~ of MAC address Byte0 is extended multiple BSSID index.
 			 		*/ 
+#ifdef ENHANCE_NEW_MBSSID_MODE			 		
 					wdev->if_addr[0] &= (MacMask << 2);
+#endif /* ENHANCE_NEW_MBSSID_MODE */
 					wdev->if_addr[0] |= 0x2;
-					wdev->if_addr[0] |= (idx << 2);
+					wdev->if_addr[0] += (((pAd->ApCfg.BssidNum + MAX_MESH_NUM) - 1) << 2);
 				}
 #ifdef ENHANCE_NEW_MBSSID_MODE
 				else
 				{
 					wdev->if_addr[0] |= 0x2;
 					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] &= (MacMask);
-					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] |= idx;
+					wdev->if_addr[pAd->chipCap.MBSSIDMode - 1] += ((pAd->ApCfg.BssidNum + MAX_MESH_NUM) - 1);
 				}
 #endif /* ENHANCE_NEW_MBSSID_MODE */
 			}
@@ -3249,6 +3253,9 @@ BOOLEAN ApCli_Close(RTMP_ADAPTER *pAd, PNET_DEV dev_p)
 				MlmeEnqueue(pAd, APCLI_CTRL_STATE_MACHINE, APCLI_CTRL_DISCONNECT_REQ, 0, NULL, ifIndex);
 				RTMP_MLME_HANDLER(pAd);
 				DBGPRINT(RT_DEBUG_TRACE, ("(%s) ApCli interface[%d] startdown.\n", __FUNCTION__, ifIndex));
+				//clean CfgApCliBssid
+				NdisZeroMemory(&(apcli_entry->CfgApCliBssid), MAC_ADDR_LEN);
+
 			}
 			return TRUE;
 		}

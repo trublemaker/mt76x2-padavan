@@ -109,6 +109,8 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 					if (pChannelList[i] == pAd->TxPower[j].Channel)
 						NdisMoveMemory(&pAd->ChannelList[index+i], &pAd->TxPower[j], sizeof(CHANNEL_TX_POWER));
 						pAd->ChannelList[index + i].Flags = pChannelListFlag[i];
+						// TODO: shiang-7603, NdisMoveMemory may replace the pAd->ChannelList[index+i].Channel as other values!
+						pAd->ChannelList[index + i].Channel = pChannelList[i];
 				}
 
 #ifdef DOT11_N_SUPPORT
@@ -120,7 +122,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 #endif /* DOT11_VHT_AC */						
 #endif /* DOT11_N_SUPPORT */
 
-				pAd->ChannelList[index+i].MaxTxPwr = 20;
+				pAd->ChannelList[index+i].MaxTxPwr = 30;
 			}
 
 			index += num;
@@ -195,7 +197,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 						(pAd->CommonCfg.RDDurRegion == FCC) &&
 						(pAd->Dot11_H.bDFSIndoor == 1))
 				{
-					if((GetChannel_5GHZ(pChDesc, i) < 116) || (GetChannel_5GHZ(pChDesc, i) > 128))
+					if((GetChannel_5GHZ(pChDesc, i) < 120) || (GetChannel_5GHZ(pChDesc, i) > 128))
 					{
 						pChannelList[q] = GetChannel_5GHZ(pChDesc, i);
 						pChannelListFlag[q] = GetChannelFlag(pChDesc, i);
@@ -233,6 +235,8 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 #ifdef DOT11_VHT_AC
 				if (vht80_channel_group(pAd, pAd->ChannelList[index + i].Channel))
 					pAd->ChannelList[index + i].Flags |= CHANNEL_80M_CAP;
+				// TODO: shiang-7603, NdisMoveMemory may replace the pAd->ChannelList[index+i].Channel as other values!
+				pAd->ChannelList[index + i].Channel = pChannelList[i];
 #endif /* DOT11_VHT_AC */	
 #endif /* DOT11_N_SUPPORT */	
 
@@ -249,7 +253,7 @@ VOID BuildChannelList(RTMP_ADAPTER *pAd)
 #ifdef SMART_MESH
 						pAd->ChannelList[index+i].FalseCCA = 0;
 #endif /* SMART_MESH */	
-				pAd->ChannelList[index+i].MaxTxPwr = 20;
+				pAd->ChannelList[index+i].MaxTxPwr = 30;
 			}
 			index += num;
 

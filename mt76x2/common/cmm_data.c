@@ -337,7 +337,7 @@ NDIS_STATUS MiniportMMRequest(
 	IN UINT Length)
 {
 	PNDIS_PACKET pPacket;
-	NDIS_STATUS Status = NDIS_STATUS_SUCCESS;
+	NDIS_STATUS Status = NDIS_STATUS_FAILURE;
 	ULONG FreeNum;
 #ifdef RTMP_MAC_PCI
 	unsigned long	IrqFlags = 0;
@@ -1466,22 +1466,22 @@ static UCHAR TxPktClassification(RTMP_ADAPTER *pAd, PNDIS_PACKET  pPacket, TX_BL
 #endif		
 		
 		if (RTMP_GET_PACKET_MOREDATA(pPacket) || (pMacEntry->PsMode == PWR_SAVE))
-			TxFrameType |= TX_LEGACY_FRAME;
+			TxFrameType = TX_LEGACY_FRAME;
 #ifdef UAPSD_SUPPORT
 		else if (RTMP_GET_PACKET_EOSP(pPacket))
-			TxFrameType |= TX_LEGACY_FRAME;
+			TxFrameType = TX_LEGACY_FRAME;
 #endif /* UAPSD_SUPPORT */
 #ifdef WFA_VHT_PF
 		else if (pAd->force_amsdu == TRUE)
-			return (TxFrameType | TX_AMSDU_FRAME);
+			return TX_AMSDU_FRAME;
 #endif /* WFA_VHT_PF */
 		else if ((pMacEntry->TXBAbitmap & (1<<(RTMP_GET_PACKET_UP(pPacket)))) != 0)
-			return (TxFrameType | TX_AMPDU_FRAME);
+			return TX_AMPDU_FRAME;
 		else if(CLIENT_STATUS_TEST_FLAG(pMacEntry, fCLIENT_STATUS_AMSDU_INUSED)
 		)
-			return (TxFrameType | TX_AMSDU_FRAME);
+			return TX_AMSDU_FRAME;
 		else
-			TxFrameType |= TX_LEGACY_FRAME;
+			TxFrameType = TX_LEGACY_FRAME;
 	
 	}
 #endif /* DOT11_N_SUPPORT */
@@ -1493,11 +1493,11 @@ static UCHAR TxPktClassification(RTMP_ADAPTER *pAd, PNDIS_PACKET  pPacket, TX_BL
 			(!(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_WMM_INUSED) && CLIENT_STATUS_TEST_FLAG(pMacEntry, fCLIENT_STATUS_WMM_CAPABLE)))
 		)
 		{	/* if peer support Ralink Aggregation, we use it.*/
-			TxFrameType |= TX_RALINK_FRAME;
+			TxFrameType = TX_RALINK_FRAME;
 		}
 		else
 		{
-			TxFrameType |= TX_LEGACY_FRAME;
+			TxFrameType = TX_LEGACY_FRAME;
 			
 		}
 	}
@@ -3425,7 +3425,7 @@ VOID RTMP_RxPacketClassify(
 	{
 		pRxBlk->CriticalPkt = 1;	// ARP
 
-		DBGPRINT(RT_DEBUG_TRACE, ("rx path arp #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
+		DBGPRINT(RT_DEBUG_INFO, ("rx path arp #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
 			pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU))); 
 	}
 	else if (protoType == ETH_P_IP)
@@ -3438,7 +3438,7 @@ VOID RTMP_RxPacketClassify(
 		{
 			pRxBlk->CriticalPkt = 1;	// ICMP
 
-			DBGPRINT(RT_DEBUG_TRACE, ("rx path PING #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
+			DBGPRINT(RT_DEBUG_INFO, ("rx path PING #(aid=%d,wcid=%d, pHeader seq=%d, ampdu = %d)\n",
 				pEntry->Aid, pRxBlk->wcid, pRxBlk->pHeader->Sequence, RX_BLK_TEST_FLAG(pRxBlk, fRX_AMPDU)));
 		}
 #if 0

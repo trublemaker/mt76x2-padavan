@@ -4476,7 +4476,7 @@ VOID APRxEAPOLFrameIndicate(
 
 #ifdef APCLI_SUPPORT
 #ifdef WPA_SUPPLICANT_SUPPORT
-	if (IS_ENTRY_APCLI(pEntry))
+	if (pEntry && IS_ENTRY_APCLI(pEntry))
 	{
 		APCLI_STRUCT *apcli_entry = &pAd->ApCfg.ApCliTab[pEntry->wdev_idx];
 
@@ -5329,7 +5329,13 @@ VOID APHandleRxDataFrame(RTMP_ADAPTER *pAd, RX_BLK *pRxBlk)
 
 	if (pRxInfo->U2M)
 	{
-		pEntry->LastRxRate = (ULONG)(pRxBlk->rx_rate.word);
+		//mao test
+		UINT32 x = (ULONG)(pRxBlk->rx_rate.word);
+		//if(x != 0x2004 || x != 0x2000)
+		{
+			pEntry->LastRxRate = x;
+		 	//DBGPRINT(RT_DEBUG_ERROR, ("LastRxRate: %x %s\n",pEntry->LastRxRate,__func__));
+		}
 #ifdef SMART_MESH
         Update_CliPktStats(pAd, pEntry, pHeader->Sequence, FALSE);
 #endif /* SMART_MESH */
@@ -5941,7 +5947,16 @@ if (0 /*!(pRxInfo->Mcast || pRxInfo->Bcast)*/){
 
 	if (pRxInfo->U2M)
 	{
-		pEntry->LastRxRate = pRxBlk->rx_rate.word;
+		//mao test
+		UINT32 x = (pRxBlk->rx_rate.word);
+		//if(x != 0x2004 || x != 0x2000)
+		{
+			pEntry->LastRxRate = x;
+		 	//DBGPRINT(RT_DEBUG_ERROR, ("LastRxRate: %x %s\n",pEntry->LastRxRate,__func__));
+		}
+		
+		//pEntry->LastRxRate = pRxBlk->rx_rate.word;
+		//DBGPRINT(RT_DEBUG_ERROR, ("LastRxRate: %x %s\n",pEntry->LastRxRate,__func__));
 #ifdef SMART_MESH
 		Update_CliPktStats(pAd, pEntry, pHeader->Sequence, FALSE);
 #endif /* SMART_MESH */
